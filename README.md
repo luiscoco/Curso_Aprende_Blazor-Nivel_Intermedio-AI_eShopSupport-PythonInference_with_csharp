@@ -1,5 +1,7 @@
 # eShopSupport 
 
+https://www.youtube.com/watch?v=pM9bTeaaAlQ&list=PLdo4fOcmZ0oX7Yg1cixIj6hXjz9C5MHJR&index=3
+
 A sample .NET application showcasing common use cases and development practices for build AI solutions in .NET (Generative AI, specifically). This sample demonstrates a customer support application for an e-commerce website using a services-based architecture with .NET Aspire. It includes support for the following AI use cases:
 
 * Text classification, applying labels based on content
