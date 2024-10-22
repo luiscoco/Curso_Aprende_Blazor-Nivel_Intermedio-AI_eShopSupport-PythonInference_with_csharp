@@ -1,0 +1,32 @@
+﻿.details-grid {
+    /* 1 or 2 columns, with min column width 12rem */
+    display: grid;
+    --details-grid-gap: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(max(12rem, calc(50% - calc(var(--details-grid-gap) / 2))), 1fr));
+    gap: 0.8rem var(--details-grid-gap);
+}
+
+.actions {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transform: scaleY(0);
+    height: 0;
+    transition-property: opacity transform height;
+    transition-timing-function: cubic-bezier(.16,.75,.35,1.02);
+    transition-duration: 0.3s;
+    transition-delay: 0.05s;
+}
+
+.modified .actions {
+    opacity: 1;
+    height: 2.75rem;
+    transform: scaleY(1);
+}
+
+/* The autocomplete shows a slightly odd empty list if there's no match, so hide it in that case */
+.product-picker ::deep fluent-anchored-region:not(:has(fluent-option)) {
+    opacity: 0;
+}

@@ -1,0 +1,98 @@
+﻿@page "/ticket/{ticketId:int}"
+@inherits RedisSubscribingComponent
+@using Microsoft.FluentUI.AspNetCore.Components
+@using StackExchange.Redis
+@using eShopSupport.ServiceDefaults.Clients.Backend
+@inject StaffBackendClient Backend
+
+<Title>Ticket @TicketId</Title>
+
+<div class="ticket">
+    <FluentSplitter BarSize="6" BarHandle="false" Panel1MinSize="300px" Panel2Size="350px" Panel2MinSize="200px" Class="splitter">
+        <Panel1>
+            <div class="details">
+                @if (ticket is not null)
+                {
+                    <TicketDetails Ticket="@ticket" />
+                }
+            </div>
+            <div class="messages">
+                <TicketMessages Ticket="@ticket" />
+            </div>
+            <div class="write-message">
+                <EditForm EditContext="@editContext" OnValidSubmit="@SendReplyAsync">
+                    <FluentTextArea @ref="replyTextArea" @bind-Value="@replyText" Placeholder="Reply to the customer" style="width: 100%; height: 100%;" />
+                    <div class="actions">
+                        @if (!isSending)
+                        {
+                            <FluentButton Type="ButtonType.Submit" Appearance="Appearance.Accent" IconStart="@sendIcon">Send</FluentButton>
+                        }
+                        else
+                        {
+                            <FluentProgressRing />
+                        }
+                    </div>
+                </EditForm>
+            </div>
+        </Panel1>
+        <Panel2>
+            <div class="assistant">
+                <TicketAssistant Ticket="@ticket" OnSuggestedReply="@AcceptSuggestedReply" />
+            </div>  
+        </Panel2>
+    </FluentSplitter>
+</div>
+
+@code {
+    private readonly Icon sendIcon = new Icons.Regular.Size20.Mail();
+    private EditContext editContext;
+    private TicketDetailsResult? ticket;
+    private string? replyText;
+    private FluentTextArea? replyTextArea;
+    private bool isSending;
+
+    [Parameter]
+    public int TicketId { get; set; }
+
+    public Ticket() => editContext = new(this);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        ticket = null;
+        ticket = await Backend.GetTicketDetailsAsync(TicketId);
+
+        SubscriptionChannel = RedisChannel.Literal($"ticket:{TicketId}");
+    }
+
+    private void AcceptSuggestedReply(string suggestion)
+    {
+        replyText = suggestion;
+        replyTextArea?.FocusAsync();
+        editContext.NotifyFieldChanged(FieldIdentifier.Create(() => replyText));
+    }
+
+    private async Task SendReplyAsync()
+    {
+        if (string.IsNullOrWhiteSpace(replyText))
+        {
+            return;
+        }
+
+        isSending = true;
+        var sendTask = Backend.SendTicketMessageAsync(TicketId, new(replyText));
+        await Task.WhenAll(sendTask, Task.Delay(500));
+
+        replyText = null;
+        editContext.MarkAsUnmodified();
+        ticket = await Backend.GetTicketDetailsAsync(TicketId);
+
+        // To avoid having the "send" button flash into existence before animating away,
+        // keep the spinner on screen for a further 1s, giving time for the animation to complete
+        StateHasChanged();
+        await Task.Delay(1000);
+        isSending = false;
+    }
+
+    protected override async Task OnRedisNotificationAsync(RedisValue value)
+        => ticket = await Backend.GetTicketDetailsAsync(TicketId);
+}

@@ -1,0 +1,6 @@
+@PythonInferenceReplacement_HostAddress = http://localhost:5000
+
+GET {{PythonInferenceReplacement_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
